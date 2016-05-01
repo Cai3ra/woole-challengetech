@@ -9,6 +9,7 @@ Desafio técnico proposto pela Woole.
 ### Dependências do projeto: 
   - Angular JS (1.2.8)  
   - Angular UI Router (0.2.15)
+  - Angular NG Resource	(1.5.1)
 
 ### Versão
   **1.0.0

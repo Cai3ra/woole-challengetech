@@ -174,10 +174,19 @@ class MapsController extends BaseController
 		   },
 		   {
 			   "featureType": "road.local",
-			   "elementType": "geometry",
+			   "elementType": "geometry.fill",
 			   "stylers": [
 				   {
 					   "color": "#000000"
+				   }
+			   ]
+		   },
+		   {
+			   "featureType": "road.local",
+			   "elementType": "geometry.stroke",
+			   "stylers": [
+				   {
+					   "color": "#d48200"
 				   }
 			   ]
 		   },

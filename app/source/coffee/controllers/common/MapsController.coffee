@@ -14,11 +14,10 @@ class MapsController extends BaseController
 		@originDirection = null
 		console.log "MapsController constructor"
 
-
 	init: ->
 		console.log "MapsController init"
 		@configureMap()
-		@directionsDisplay = new google.maps.DirectionsRenderer()
+		# @directionsDisplay = new google.maps.DirectionsRenderer()
 
 		# @scope.onSearch = @onSearchBox
 		# @inputSearchText = angular.element(document.querySelectorAll(".pac-input"))
@@ -52,14 +51,246 @@ class MapsController extends BaseController
 				
 
 	configureMap: () ->
-		mapElement = @querySelector('.maps-container .box-maps .map')
+		console.log "configureMap"
+		mapElement = @querySelector('.map')
+
 		mapOptions =
-			center: new google.maps.LatLng(-14.2667716, -62.2782831)
-			zoom: 4
+			center: new google.maps.LatLng(-23.5874, -46.6576)
+			zoom: 14
 			mapTypeId: google.maps.MapTypeId.ROADMAP
 			zoomControlOptions: position: google.maps.ControlPosition.TOP_RIGHT
 			panControlOptions: position: google.maps.ControlPosition.TOP_RIGHT
 		@map = new google.maps.Map(mapElement, mapOptions)
+		@map.getCenter()
+		
+		@styles = [
+			{
+				"featureType": "all",
+				"elementType": "labels.text.fill",
+				"stylers": [
+					{
+					"color": "#ffffff"
+					}
+				]
+		   },
+		   {
+			   "featureType": "all",
+			   "elementType": "labels.text.stroke",
+			   "stylers": [
+				   {
+					   "color": "#000000"
+				   },
+				   {
+					   "lightness": 13
+				   }
+			   ]
+		   },
+		   {
+			   "featureType": "administrative",
+			   "elementType": "geometry.fill",
+			   "stylers": [
+				   {
+					   "color": "#000000"
+				   }
+			   ]
+		   },
+		   {
+			   "featureType": "administrative",
+			   "elementType": "geometry.stroke",
+			   "stylers": [
+				   {
+					   "color": "#144b53"
+				   },
+				   {
+					   "lightness": 14
+				   },
+				   {
+					   "weight": 1.4
+				   }
+			   ]
+		   },
+		   {
+			   "featureType": "landscape",
+			   "elementType": "all",
+			   "stylers": [
+				   {
+					   "color": "#08304b"
+				   }
+			   ]
+		   },
+		   {
+			   "featureType": "poi",
+			   "elementType": "geometry",
+			   "stylers": [
+				   {
+					   "color": "#0c4152"
+				   },
+				   {
+					   "lightness": 5
+				   }
+			   ]
+		   },
+		   {
+			   "featureType": "road.highway",
+			   "elementType": "geometry.fill",
+			   "stylers": [
+				   {
+					   "color": "#d48200"
+				   }
+			   ]
+		   },
+		   {
+			   "featureType": "road.highway",
+			   "elementType": "geometry.stroke",
+			   "stylers": [
+				   {
+					   "color": "#0b434f"
+				   },
+				   {
+					   "lightness": 25
+				   }
+			   ]
+		   },
+		   {
+			   "featureType": "road.arterial",
+			   "elementType": "geometry.fill",
+			   "stylers": [
+				   {
+					   "color": "#d48200"
+				   }
+			   ]
+		   },
+		   {
+			   "featureType": "road.arterial",
+			   "elementType": "geometry.stroke",
+			   "stylers": [
+				   {
+					   "color": "#0b3d51"
+				   },
+				   {
+					   "lightness": 16
+				   }
+			   ]
+		   },
+		   {
+			   "featureType": "road.local",
+			   "elementType": "geometry",
+			   "stylers": [
+				   {
+					   "color": "#000000"
+				   }
+			   ]
+		   },
+		   {
+			   "featureType": "transit",
+			   "elementType": "all",
+			   "stylers": [
+				   {
+					   "color": "#146474"
+				   }
+			   ]
+		   },
+		   {
+			   "featureType": "water",
+			   "elementType": "all",
+			   "stylers": [
+				   {
+					   "color": "#021019"
+				   }
+			   ]
+		   }
+			# {
+			#    "featureType": "all",
+			#    "elementType": "all",
+			#    "stylers": [
+			# 	   {
+			# 		   "hue": "#ff0000"
+			# 	   },
+			# 	   {
+			# 		   "saturation": -100
+			# 	   },
+			# 	   {
+			# 		   "lightness": -30
+			# 	   }
+			#    ]
+		 #   },
+		 #   {
+			#    "featureType": "all",
+			#    "elementType": "labels.text.fill",
+			#    "stylers": [
+			# 	   {
+			# 		   "color": "#d48200"
+			# 	   }
+			#    ]
+		 #   },
+		 #   {
+			#    "featureType": "all",
+			#    "elementType": "labels.text.stroke",
+			#    "stylers": [
+			# 	   {
+			# 		   "color": "#353535"
+			# 	   }
+			#    ]
+		 #   },
+		 #   {
+			#    "featureType": "landscape",
+			#    "elementType": "geometry",
+			#    "stylers": [
+			# 	   {
+			# 		   "color": "#656565"
+			# 	   }
+			#    ]
+		 #   },
+		 #   {
+			#    "featureType": "poi",
+			#    "elementType": "geometry.fill",
+			#    "stylers": [
+			# 	   {
+			# 		   "color": "#505050"
+			# 	   }
+			#    ]
+		 #   },
+		 #   {
+			#    "featureType": "poi",
+			#    "elementType": "geometry.stroke",
+			#    "stylers": [
+			# 	   {
+			# 		   "color": "#808080"
+			# 	   }
+			#    ]
+		 #   },
+		 #   {
+			#    "featureType": "road",
+			#    "elementType": "geometry",
+			#    "stylers": [
+			# 	   {
+			# 		   "color": "#d48200"
+			# 	   }
+			#    ]
+		 #   },
+		 #   {
+			#    "featureType": "transit",
+			#    "elementType": "labels",
+			#    "stylers": [
+			# 	   {
+			# 		   "hue": "#000000"
+			# 	   },
+			# 	   {
+			# 		   "saturation": 100
+			# 	   },
+			# 	   {
+			# 		   "lightness": -40
+			# 	   },
+			# 	   {
+			# 		   "invert_lightness": true
+			# 	   },
+			# 	   {
+			# 		   "gamma": 1.5
+			# 	   }
+			#    ]
+		 #   }
+		]
+		@map.setOptions {styles: @styles}
 		# @plotMap(lojas)
 		# input = @querySelector('.store-maps-view .pac-input')
 		# @placeMarkers = []
@@ -72,9 +303,9 @@ class MapsController extends BaseController
 		# autocomplete = new google.maps.places.Autocomplete(input,completeOptions)
 		# autocomplete.bindTo('bounds', @map)
 
-		@map.fitBounds(bounds)
-		center = @map.getCenter()
-		@findClosest(center.lat(), center.lng())
+		# @map.fitBounds(bounds)
+		# center = @map.getCenter()
+		# @findClosest(center.lat(), center.lng())
 
 		
 		return
@@ -82,7 +313,7 @@ class MapsController extends BaseController
 	onSearchBox: =>
 		places = @searchBox.getPlaces()
 
-		console.log places
+		# console.log places
 
 		return if !places or places.length == 0
 
@@ -143,6 +374,7 @@ class MapsController extends BaseController
 		false
 
 	onResize: =>
+		console.log "maps resize"
 
 	querySelector:(value) ->
 		return document.querySelector(value)

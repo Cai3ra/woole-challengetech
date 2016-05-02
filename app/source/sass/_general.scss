@@ -7,6 +7,7 @@ body, html {
     text-rendering: optimizeLegibility;
     -webkit-tap-highlight-color: rgba(0,0,0,0);
     -webkit-tap-highlight-color: transparent; 
+    overflow: hidden;
 }
 
 body, html, input, a, div, section, article, h1, {
@@ -25,13 +26,29 @@ b, strong{
 	clear: both;
 }
 
-#wrapper {
+#wrap {
 	@include center-x; 
 	max-width: $max-width+px;
 	overflow: hidden;
 	clear: both;
 
+	#content-page {
+		@include set-size(100%, 100vh);
 
+		.center-view{
+			@include set-size(100%, 100%);
+			@include center-x();
+			.main-title{
+				.title{
+
+				}
+
+				.desc{
+
+				}
+			}
+		}
+	}
 }
 
 .center-y {

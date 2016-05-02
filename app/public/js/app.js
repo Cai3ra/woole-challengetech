@@ -88,16 +88,16 @@ MapsController = (function(superClass) {
 
   MapsController.prototype.init = function() {
     console.log("MapsController init");
-    this.configureMap();
-    return this.directionsDisplay = new google.maps.DirectionsRenderer();
+    return this.configureMap();
   };
 
   MapsController.prototype.configureMap = function() {
-    var center, mapElement, mapOptions;
-    mapElement = this.querySelector('.maps-container .box-maps .map');
+    var mapElement, mapOptions;
+    console.log("configureMap");
+    mapElement = this.querySelector('.map');
     mapOptions = {
-      center: new google.maps.LatLng(-14.2667716, -62.2782831),
-      zoom: 4,
+      center: new google.maps.LatLng(-23.5874, -46.6576),
+      zoom: 14,
       mapTypeId: google.maps.MapTypeId.ROADMAP,
       zoomControlOptions: {
         position: google.maps.ControlPosition.TOP_RIGHT
@@ -107,15 +107,134 @@ MapsController = (function(superClass) {
       }
     };
     this.map = new google.maps.Map(mapElement, mapOptions);
-    this.map.fitBounds(bounds);
-    center = this.map.getCenter();
-    this.findClosest(center.lat(), center.lng());
+    this.map.getCenter();
+    this.styles = [
+      {
+        "featureType": "all",
+        "elementType": "labels.text.fill",
+        "stylers": [
+          {
+            "color": "#ffffff"
+          }
+        ]
+      }, {
+        "featureType": "all",
+        "elementType": "labels.text.stroke",
+        "stylers": [
+          {
+            "color": "#000000"
+          }, {
+            "lightness": 13
+          }
+        ]
+      }, {
+        "featureType": "administrative",
+        "elementType": "geometry.fill",
+        "stylers": [
+          {
+            "color": "#000000"
+          }
+        ]
+      }, {
+        "featureType": "administrative",
+        "elementType": "geometry.stroke",
+        "stylers": [
+          {
+            "color": "#144b53"
+          }, {
+            "lightness": 14
+          }, {
+            "weight": 1.4
+          }
+        ]
+      }, {
+        "featureType": "landscape",
+        "elementType": "all",
+        "stylers": [
+          {
+            "color": "#08304b"
+          }
+        ]
+      }, {
+        "featureType": "poi",
+        "elementType": "geometry",
+        "stylers": [
+          {
+            "color": "#0c4152"
+          }, {
+            "lightness": 5
+          }
+        ]
+      }, {
+        "featureType": "road.highway",
+        "elementType": "geometry.fill",
+        "stylers": [
+          {
+            "color": "#d48200"
+          }
+        ]
+      }, {
+        "featureType": "road.highway",
+        "elementType": "geometry.stroke",
+        "stylers": [
+          {
+            "color": "#0b434f"
+          }, {
+            "lightness": 25
+          }
+        ]
+      }, {
+        "featureType": "road.arterial",
+        "elementType": "geometry.fill",
+        "stylers": [
+          {
+            "color": "#d48200"
+          }
+        ]
+      }, {
+        "featureType": "road.arterial",
+        "elementType": "geometry.stroke",
+        "stylers": [
+          {
+            "color": "#0b3d51"
+          }, {
+            "lightness": 16
+          }
+        ]
+      }, {
+        "featureType": "road.local",
+        "elementType": "geometry",
+        "stylers": [
+          {
+            "color": "#000000"
+          }
+        ]
+      }, {
+        "featureType": "transit",
+        "elementType": "all",
+        "stylers": [
+          {
+            "color": "#146474"
+          }
+        ]
+      }, {
+        "featureType": "water",
+        "elementType": "all",
+        "stylers": [
+          {
+            "color": "#021019"
+          }
+        ]
+      }
+    ];
+    this.map.setOptions({
+      styles: this.styles
+    });
   };
 
   MapsController.prototype.onSearchBox = function() {
     var bounds, center, places;
     places = this.searchBox.getPlaces();
-    console.log(places);
     if (!places || places.length === 0) {
       return;
     }
@@ -178,7 +297,9 @@ MapsController = (function(superClass) {
     return false;
   };
 
-  MapsController.prototype.onResize = function() {};
+  MapsController.prototype.onResize = function() {
+    return console.log("maps resize");
+  };
 
   MapsController.prototype.querySelector = function(value) {
     return document.querySelector(value);
@@ -239,16 +360,29 @@ BaseController = require('../BaseController');
 MainController = (function(superClass) {
   extend(MainController, superClass);
 
-  function MainController($scope) {
+  function MainController($scope, $rootScope, $compile, $element) {
     this.destroy = bind(this.destroy, this);
     console.log("MainController");
     this.scope = $scope;
+    this.rootScope = $rootScope;
+    this.compile = $compile;
+    this.element = $element;
     this.scope.templates = [
       {
         "class": "",
         url: "views/partials/maps.html"
       }
     ];
+    setTimeout((function(_this) {
+      return function() {
+        console.log(_this.element);
+        return _this.scope.$apply(function() {
+          var el;
+          el = $compile('<div class="maps-directive"></div>')(_this.scope);
+          return angular.element(document.querySelector(".maps-box")).append(el);
+        });
+      };
+    })(this), 500);
     MainController.__super__.constructor.call(this, $scope);
   }
 
@@ -274,11 +408,14 @@ mapsDirective = (function() {
   function mapsDirective() {}
 
   mapsDirective.loadScript = function($window) {
-    var mapsKey, tag;
+    var clusterTag, mapsKey, tag;
     if ($window.google == null) {
+      clusterTag = document.createElement('script');
+      clusterTag.src = 'js/libs/lazy/markerclusterer_compiled.js';
+      document.body.appendChild(clusterTag);
       mapsKey = 'AIzaSyDDWLyi8QG0CjcQdC-3efc6pPTdhubCO38';
       tag = document.createElement('script');
-      tag.src = "https://maps.googleapis.com/maps/api/js?key=" + mapsKey + "&language=pt_BR&libraries=places&callback=initialize";
+      tag.src = "https://maps.googleapis.com/maps/api/js?key=" + mapsKey + "&callback=initialize";
       return document.body.appendChild(tag);
     } else {
       return $window.initialize();
@@ -302,7 +439,6 @@ mapsDirective = (function() {
       controllerAs: 'maps',
       templateUrl: 'views/partials/maps.html',
       link: function(controller) {
-        console.log("mapsDirective create");
         return mapsDirective.lazyLoad($window, $q).then(function() {
           if (($window.google != null) && ($window.google.maps != null)) {
             return controller.maps.init();

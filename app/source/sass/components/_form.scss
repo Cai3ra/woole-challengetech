@@ -1,0 +1,40 @@
+.default-form{
+	@include set-size(80%, auto);
+	@include center-x;
+	position: absolute;
+	max-width: 480px;
+	z-index: 1;
+	padding: 10px 10px 20px 10px;
+    background-color: #021019;
+    opacity: 0.9;
+
+	.default-label{
+		@include set-size(100%, 32px);
+		display: inline-block;
+		text-align: center;
+		margin-bottom: 10px;
+		color: $yellow;
+	}
+
+	.default-input{
+		@include set-size(calc(100% - 20px), 100%);
+		border: none;
+		background-color: $yellow;
+		opacity: 0.8;
+		padding-left: 10px;
+		font-family: $font;
+
+		@include input-placeholder {
+			color: #000;
+		}
+	}
+
+	#submit{
+		margin: 35px 0 0 5px;
+		border: none;
+		background: transparent;
+		font-family: $font; 
+		@include font-size(18);
+		color: $yellow;
+	}
+}

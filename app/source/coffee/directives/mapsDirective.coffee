@@ -7,7 +7,7 @@ class mapsDirective
 			
 			mapsKey = 'AIzaSyDDWLyi8QG0CjcQdC-3efc6pPTdhubCO38'
 			tag = document.createElement('script')
-			tag.src = "https://maps.googleapis.com/maps/api/js?key=#{mapsKey}&callback=initialize"
+			tag.src = "https://maps.googleapis.com/maps/api/js?key=#{mapsKey}&language=pt_BR&libraries=places&callback=initialize"
 			document.body.appendChild(tag)
 		else
 			$window.initialize()

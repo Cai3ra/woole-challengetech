@@ -3,8 +3,10 @@
     height: $h;
 }
 
-@mixin center-x() {
-	margin: 0 auto 0 auto;
+@mixin center-x($position: relative) {
+	position: $position;
+	left: 50%;
+	@include transform(translateX(-50%));
 }
 
 @mixin center-y($position: relative) {

@@ -1,4 +1,14 @@
-
+<form ng-submit="submitSearch()" class="default-form" name="sarchForm">
+    <label class="default-label">
+       Insira seu ponto de partida:<br>
+       <input class="default-input start-input" type="text" name="startInput" ng-minlength="5" required><br><br>
+    </label>
+    <label class="default-label">
+       Insira seu destino:<br>
+       <input class="default-input end-input" type="text" name="endInput" ng-minlength="5" required>
+    </label>
+    <input type="submit" id="submit" value="Submit" />
+</form>
 <div class="map-container">
 	<div class="map"></div>
 </div>

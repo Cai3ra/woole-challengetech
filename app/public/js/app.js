@@ -72,29 +72,41 @@ MapsController = (function(superClass) {
     this.onResize = bind(this.onResize, this);
     this.destroy = bind(this.destroy, this);
     this.findClosest = bind(this.findClosest, this);
-    this.onSearchBox = bind(this.onSearchBox, this);
+    this.renderPlace = bind(this.renderPlace, this);
+    this.onSearchEndBox = bind(this.onSearchEndBox, this);
+    this.onSearchStartBox = bind(this.onSearchStartBox, this);
+    this.getRoute = bind(this.getRoute, this);
+    this.onSearch = bind(this.onSearch, this);
     MapsController.__super__.constructor.call(this, $scope);
     this.scope = $scope;
     this.compile = $compile;
-    this.scope.stores = [];
+    this.scope.submitSearch = this.onSearch;
     this.map = null;
     this.markers = [];
     this.w = angular.element($window);
     this.w.bind('resize', this.onResize);
+    this.geocoder = null;
+    this.directionsService = null;
     this.directionsDisplay = null;
     this.originDirection = null;
-    console.log("MapsController constructor");
+    this.searchStartBox = null;
+    this.searchEndBox = null;
+    this.places = {
+      start: null,
+      dest: null
+    };
   }
 
   MapsController.prototype.init = function() {
-    console.log("MapsController init");
     return this.configureMap();
   };
 
   MapsController.prototype.configureMap = function() {
-    var mapElement, mapOptions;
-    console.log("configureMap");
+    var autocompleteEnd, autocompleteStart, completeOptions, input, mapElement, mapOptions;
     mapElement = this.querySelector('.map');
+    this.geocoder = new google.maps.Geocoder();
+    this.directionsService = new google.maps.DirectionsService();
+    this.directionsDisplay = new google.maps.DirectionsRenderer();
     mapOptions = {
       center: new google.maps.LatLng(-23.5874, -46.6576),
       zoom: 14,
@@ -170,7 +182,7 @@ MapsController = (function(superClass) {
         "elementType": "geometry.fill",
         "stylers": [
           {
-            "color": "#d48200"
+            "color": "#FF9715"
           }
         ]
       }, {
@@ -188,7 +200,7 @@ MapsController = (function(superClass) {
         "elementType": "geometry.fill",
         "stylers": [
           {
-            "color": "#d48200"
+            "color": "#FF9715"
           }
         ]
       }, {
@@ -214,7 +226,7 @@ MapsController = (function(superClass) {
         "elementType": "geometry.stroke",
         "stylers": [
           {
-            "color": "#d48200"
+            "color": "#FF9715"
           }
         ]
       }, {
@@ -238,26 +250,90 @@ MapsController = (function(superClass) {
     this.map.setOptions({
       styles: this.styles
     });
+    this.placeMarkers = [];
+    completeOptions = {
+      types: ['geocode'],
+      componentRestrictions: {
+        country: 'br'
+      }
+    };
+    input = this.querySelector('.default-input.start-input');
+    this.searchStartBox = new google.maps.places.SearchBox(input);
+    this.searchStartBox.addListener('places_changed', this.onSearchStartBox);
+    autocompleteStart = new google.maps.places.Autocomplete(input, completeOptions);
+    autocompleteStart.bindTo('bounds', this.map);
+    input = this.querySelector('.default-input.end-input');
+    this.searchEndBox = new google.maps.places.SearchBox(input);
+    this.searchEndBox.addListener('places_changed', this.onSearchEndBox);
+    autocompleteEnd = new google.maps.places.Autocomplete(input, completeOptions);
+    autocompleteEnd.bindTo('bounds', this.map);
   };
 
-  MapsController.prototype.onSearchBox = function() {
-    var bounds, center, places;
-    places = this.searchBox.getPlaces();
-    if (!places || places.length === 0) {
+  MapsController.prototype.onSearch = function() {
+    if (!this.places.start || !this.places.dest) {
       return;
     }
+    return this.getRoute(this.places.start[0].geometry.location, this.places.dest[0].geometry.location);
+  };
+
+  MapsController.prototype.getRoute = function(_origLatLng, _destLatLng) {
+    var request, waypts;
+    this.directionsDisplay.setMap(this.map);
+    waypts = [];
+    request = {
+      origin: _origLatLng,
+      destination: _destLatLng,
+      travelMode: google.maps.TravelMode.BICYCLING,
+      waypoints: waypts,
+      optimizeWaypoints: true
+    };
+    return this.directionsService.route(request, (function(_this) {
+      return function(response, status) {
+        if (status === google.maps.DirectionsStatus.OK) {
+          console.log(response, response.routes[0].legs[0].distance.text, response.routes[0].legs[0].duration.text);
+          return _this.directionsDisplay.setDirections(response);
+        } else {
+          return window.alert('Directions request failed due to ' + status);
+        }
+      };
+    })(this));
+  };
+
+  MapsController.prototype.onSearchStartBox = function() {
+    if (this.places.start !== null) {
+      this.places.start = null;
+    }
+    this.places.start = this.searchStartBox.getPlaces();
+    if (!this.places.start || this.places.start.length === 0) {
+      return;
+    }
+    this.renderPlace();
+  };
+
+  MapsController.prototype.onSearchEndBox = function() {
+    if (this.places.dest !== null) {
+      this.places.dest = null;
+    }
+    this.places.dest = this.searchEndBox.getPlaces();
+    if (!this.places.dest || this.places.dest.length === 0) {
+      return;
+    }
+    this.renderPlace();
+  };
+
+  MapsController.prototype.renderPlace = function() {
+    var bounds, center;
     this.placeMarkers.forEach(function(marker) {
       marker.setMap(null);
     });
     this.placeMarkers = [];
     bounds = new google.maps.LatLngBounds();
-    places.forEach((function(_this) {
-      return function(place) {
+    angular.forEach(this.places, (function(_this) {
+      return function(value, key) {
         var icon;
-        _this.originDirection = place;
         icon = {
-          url: place.icon,
-          size: new google.maps.Size(71, 71),
+          url: value[0].icon,
+          size: new google.maps.Size(130, 130),
           origin: new google.maps.Point(0, 0),
           anchor: new google.maps.Point(17, 34),
           scaledSize: new google.maps.Size(25, 25)
@@ -265,19 +341,18 @@ MapsController = (function(superClass) {
         _this.placeMarkers.push(new google.maps.Marker({
           map: _this.map,
           icon: icon,
-          title: place.name,
-          position: place.geometry.location
+          title: value[0].name,
+          position: value[0].geometry.location
         }));
-        if (place.geometry.viewport) {
-          return bounds.union(place.geometry.viewport);
+        if (value[0].geometry.viewport) {
+          return bounds.union(value[0].geometry.viewport);
         } else {
-          return bounds.extend(place.geometry.location);
+          return bounds.extend(value[0].geometry.location);
         }
       };
     })(this));
     this.map.fitBounds(bounds);
-    center = this.map.getCenter();
-    this.findClosest(center.lat(), center.lng());
+    return center = this.map.getCenter();
   };
 
   MapsController.prototype.findClosest = function(lat, lng) {
@@ -423,7 +498,7 @@ mapsDirective = (function() {
       document.body.appendChild(clusterTag);
       mapsKey = 'AIzaSyDDWLyi8QG0CjcQdC-3efc6pPTdhubCO38';
       tag = document.createElement('script');
-      tag.src = "https://maps.googleapis.com/maps/api/js?key=" + mapsKey + "&callback=initialize";
+      tag.src = "https://maps.googleapis.com/maps/api/js?key=" + mapsKey + "&language=pt_BR&libraries=places&callback=initialize";
       return document.body.appendChild(tag);
     } else {
       return $window.initialize();

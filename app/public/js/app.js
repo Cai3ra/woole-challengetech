@@ -70,7 +70,7 @@ MapStyles = require('../../utils/MapStyles');
 MapsController = (function(superClass) {
   extend(MapsController, superClass);
 
-  function MapsController($scope, $element, $window, $compile) {
+  function MapsController($scope, $rootScope, $element, $window, $compile) {
     this.onResize = bind(this.onResize, this);
     this.destroy = bind(this.destroy, this);
     this.findClosest = bind(this.findClosest, this);
@@ -80,15 +80,14 @@ MapsController = (function(superClass) {
     this.getRoute = bind(this.getRoute, this);
     this.onSearch = bind(this.onSearch, this);
     this.setSearchBoxes = bind(this.setSearchBoxes, this);
+    this.onKmlLoaded = bind(this.onKmlLoaded, this);
     this.setStopPoints = bind(this.setStopPoints, this);
     MapsController.__super__.constructor.call(this, $scope);
     this.scope = $scope;
+    this.rootScope = $rootScope;
     this.compile = $compile;
-    this.scope.submitSearch = this.onSearch;
     this.map = null;
     this.markers = [];
-    this.w = angular.element($window);
-    this.w.bind('resize', this.onResize);
     this.geocoder = null;
     this.directionsService = null;
     this.directionsDisplay = null;
@@ -99,10 +98,14 @@ MapsController = (function(superClass) {
       start: null,
       dest: null
     };
+    this.allStopPoints = [];
+    this.w = angular.element($window);
+    this.w.bind('resize', this.onResize);
   }
 
   MapsController.prototype.init = function() {
-    return this.configureMap();
+    this.configureMap();
+    return this.rootScope.$on("request_route", this.onSearch);
   };
 
   MapsController.prototype.configureMap = function() {
@@ -129,15 +132,33 @@ MapsController = (function(superClass) {
     });
     this.placeMarkers = [];
     this.setStopPoints();
-    this.setSearchBoxes();
+    return this.setSearchBoxes();
   };
 
   MapsController.prototype.setStopPoints = function() {
-    console.log("setStopPoints");
-    return this.kmlLayer = new google.maps.KmlLayer({
-      url: 'http://c4i3r4.co/woole-challengetech/data/stop_points.kml',
+    var _kmlOptions, _kmlUrl;
+    _kmlUrl = 'http://c4i3r4.co/woole-challengetech/data/stop_points.kml';
+    _kmlOptions = {
+      afterParse: this.onKmlLoaded,
       map: this.map
-    });
+    };
+    this.geoParser = new geoXML3.parser(_kmlOptions);
+    return this.geoParser.parse(_kmlUrl);
+  };
+
+  MapsController.prototype.onKmlLoaded = function(doc) {
+    var i, j, len, place, ref, results;
+    ref = doc[0].placemarks;
+    results = [];
+    for (i = j = 0, len = ref.length; j < len; i = ++j) {
+      place = ref[i];
+      results.push(this.allStopPoints.push({
+        name: place.name,
+        lat: place.latlng.lat(),
+        lng: place.latlng.lng()
+      }));
+    }
+    return results;
   };
 
   MapsController.prototype.setSearchBoxes = function() {
@@ -164,18 +185,29 @@ MapsController = (function(superClass) {
     if (!this.places.start || !this.places.dest) {
       return;
     }
+    console.log("onSearch: ", this.places);
     return this.getRoute(this.places.start[0].geometry.location, this.places.dest[0].geometry.location);
   };
 
   MapsController.prototype.getRoute = function(_origLatLng, _destLatLng) {
-    var request, waypts;
+    var _waypts, request;
     this.directionsDisplay.setMap(this.map);
-    waypts = [];
+    console.log("@startClosest", this.startClosest);
+    _waypts = [
+      {
+        location: new google.maps.LatLng(this.startClosest.lat, this.startClosest.lng),
+        stopover: true
+      }, {
+        location: new google.maps.LatLng(this.destClosest.lat, this.destClosest.lng),
+        stopover: true
+      }
+    ];
+    console.log("getRoute _waypts:", _waypts);
     request = {
       origin: _origLatLng,
       destination: _destLatLng,
       travelMode: google.maps.TravelMode.BICYCLING,
-      waypoints: waypts,
+      waypoints: _waypts,
       optimizeWaypoints: true
     };
     return this.directionsService.route(request, (function(_this) {
@@ -198,7 +230,7 @@ MapsController = (function(superClass) {
     if (!this.places.start || this.places.start.length === 0) {
       return;
     }
-    this.renderPlace();
+    this.renderPlace('start');
   };
 
   MapsController.prototype.onSearchEndBox = function() {
@@ -209,10 +241,10 @@ MapsController = (function(superClass) {
     if (!this.places.dest || this.places.dest.length === 0) {
       return;
     }
-    this.renderPlace();
+    this.renderPlace('dest');
   };
 
-  MapsController.prototype.renderPlace = function() {
+  MapsController.prototype.renderPlace = function(_origin) {
     var bounds, center;
     this.placeMarkers.forEach(function(marker) {
       marker.setMap(null);
@@ -236,9 +268,14 @@ MapsController = (function(superClass) {
           position: value[0].geometry.location
         }));
         if (value[0].geometry.viewport) {
-          return bounds.union(value[0].geometry.viewport);
+          bounds.union(value[0].geometry.viewport);
         } else {
-          return bounds.extend(value[0].geometry.location);
+          bounds.extend(value[0].geometry.location);
+        }
+        if (_origin === "start") {
+          return _this.startClosest = _this.findClosest(value[0].geometry.location.lat(), value[0].geometry.location.lng());
+        } else if (_origin === "dest") {
+          return _this.destClosest = _this.findClosest(value[0].geometry.location.lat(), value[0].geometry.location.lng());
         }
       };
     })(this));
@@ -248,22 +285,19 @@ MapsController = (function(superClass) {
 
   MapsController.prototype.findClosest = function(lat, lng) {
     var d, dLat, dLng, i, pos;
-    i = this.scope.stores.length;
+    i = this.allStopPoints.length;
     while (i-- > 0) {
-      pos = this.scope.stores[i].position;
+      pos = this.allStopPoints[i];
       dLat = pos.lat - lat;
       dLng = pos.lng - lng;
       d = (dLat * dLat) + (dLng * dLng);
-      this.scope.stores[i].distance = d;
-      this.scope.stores[i].selected = d < 0.000001;
+      this.allStopPoints[i].distance = d;
     }
-    this.scope.stores.sort(function(a, b) {
+    this.allStopPoints.sort(function(a, b) {
       return a.distance - b.distance;
     });
-    this.onResize();
-    if (!this.scope.$$phase) {
-      return this.scope.$apply();
-    }
+    console.log("findClosest: ", this.allStopPoints[0]);
+    return this.allStopPoints[0];
   };
 
   MapsController.prototype.destroy = function() {
@@ -382,11 +416,12 @@ formDirective = (function() {
         var _elBt, _elDirective;
         _elDirective = $document;
         _elBt = $document.children().eq(3);
-        console.log(_elBt);
-        return $scope.toggleExpand = function() {
-          console.log("toggleExpand");
+        $scope.toggleExpand = function() {
           angular.element(_elDirective).toggleClass("expanded");
           return false;
+        };
+        return $scope.submitSearch = function() {
+          return $scope.$emit("request_route");
         };
       }
     };

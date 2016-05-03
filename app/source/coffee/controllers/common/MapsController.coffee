@@ -2,15 +2,14 @@ BaseController = require '../BaseController'
 MapStyles = require '../../utils/MapStyles'
 
 class MapsController extends BaseController
-	constructor: ($scope, $element, $window, $compile) ->
+	constructor: ($scope, $rootScope, $element, $window, $compile) ->
 		super($scope)
 		@scope = $scope
+		@rootScope = $rootScope
 		@compile = $compile
-		@scope.submitSearch = @onSearch
+
 		@map = null
 		@markers = []
-		@w = angular.element($window);
-		@w.bind 'resize', @onResize
 		@geocoder = null
 		@directionsService = null
 		@directionsDisplay = null
@@ -18,9 +17,14 @@ class MapsController extends BaseController
 		@searchStartBox = null
 		@searchEndBox = null
 		@places = {start: null, dest: null}
+		@allStopPoints = []
+		
+		@w = angular.element($window);
+		@w.bind 'resize', @onResize
 
 	init: ->
 		@configureMap()
+		@rootScope.$on "request_route", @onSearch
 
 	configureMap: () ->
 		mapElement = @querySelector('.map')
@@ -44,17 +48,22 @@ class MapsController extends BaseController
 		@setStopPoints()
 		@setSearchBoxes()
 
-		# @map.fitBounds(bounds)
-		# center = @map.getCenter()
-		# @findClosest(center.lat(), center.lng())		
-		return
-
 	setStopPoints:()=>
-		console.log "setStopPoints"
-		@kmlLayer = new google.maps.KmlLayer {
-			url: 'http://c4i3r4.co/woole-challengetech/data/stop_points.kml'
+		_kmlUrl = 'http://c4i3r4.co/woole-challengetech/data/stop_points.kml'
+		_kmlOptions = {
+			afterParse: @onKmlLoaded
 			map: @map
 		}
+		@geoParser = new geoXML3.parser _kmlOptions
+		@geoParser.parse _kmlUrl
+
+	onKmlLoaded:(doc)=>
+		for place, i in doc[0].placemarks
+			@allStopPoints.push {
+				name: place.name
+				lat: place.latlng.lat()
+				lng: place.latlng.lng()
+			}
 
 	setSearchBoxes:()=>
 		completeOptions =
@@ -76,36 +85,23 @@ class MapsController extends BaseController
 
 	onSearch:()=>
 		return if !@places.start or !@places.dest
+		console.log "onSearch: ", @places
 		@getRoute @places.start[0].geometry.location, @places.dest[0].geometry.location
 
-		# start = document.getElementById('start-input').value
-		# end = document.getElementById('end-input').value
-		# console.log "onSearch", start, end
-
-		# @geocoder.geocode( { 'address': start}, (results, status) =>
-		# 	if status is google.maps.GeocoderStatus.OK
-		# 		_origLatLng = results[0].geometry.location
-		# 		@geocoder.geocode( { 'address': end}, (results, status) =>
-		# 			if status is google.maps.GeocoderStatus.OK
-		# 				_destLatLng = results[0].geometry.location
-		# 				@getRoute _origLatLng, _destLatLng
-		# 			else
-		# 				alert "Geocode DEST was not successful for the following reason: " + status
-		# 		)
-		# 	else
-		# 		alert "Geocode ORIGIN was not successful for the following reason: " + status
-		# )
 		
 	getRoute: (_origLatLng, _destLatLng)=>
 		@directionsDisplay.setMap(@map)
-		waypts = [
-
+		console.log "@startClosest", @startClosest
+		_waypts = [
+			{location: new google.maps.LatLng(@startClosest.lat, @startClosest.lng), stopover: true},
+			{location: new google.maps.LatLng(@destClosest.lat, @destClosest.lng), stopover: true}
 		]
+		console.log "getRoute _waypts:", _waypts
 		request = {
 			origin: _origLatLng
 			destination: _destLatLng
 			travelMode: google.maps.TravelMode.BICYCLING
-			waypoints: waypts
+			waypoints: _waypts
 			optimizeWaypoints: true
 		}
 		
@@ -120,27 +116,24 @@ class MapsController extends BaseController
 	onSearchStartBox: =>
 		@places.start = null if @places.start isnt null
 		@places.start = @searchStartBox.getPlaces()
-		# console.log "searchStartBox:", @places
 		return if !@places.start or @places.start.length is 0
-		@renderPlace()
+		@renderPlace 'start'
 		return
 
 	onSearchEndBox: =>
 		@places.dest = null if @places.dest isnt null
 		@places.dest = @searchEndBox.getPlaces()
-		# console.log "searchEndBox:", @places
 		return if !@places.dest or @places.dest.length is 0
-		@renderPlace()
+		@renderPlace 'dest'
 		return
 
-	renderPlace:()=>
+	renderPlace:(_origin)=>
 		@placeMarkers.forEach (marker) ->
 			marker.setMap(null)
 			return
 		@placeMarkers = []
 
 		bounds = new google.maps.LatLngBounds()
-		# @places.forEach (place) =>
 		angular.forEach @places, (value, key)=>
 			icon =
 				url: value[0].icon
@@ -160,29 +153,36 @@ class MapsController extends BaseController
 			else
 				bounds.extend(value[0].geometry.location)
 
+			if _origin is "start"
+				@startClosest = @findClosest value[0].geometry.location.lat(), value[0].geometry.location.lng()
+			else if _origin is "dest"
+				@destClosest = @findClosest value[0].geometry.location.lat(), value[0].geometry.location.lng()
+
 		@map.fitBounds(bounds)
 		center = @map.getCenter()
 		# @findClosest(center.lat(), center.lng())
 
 	findClosest: (lat, lng) =>
-		i = @scope.stores.length
+		i = @allStopPoints.length
 		while i-- > 0
-			pos = @scope.stores[i].position
+			pos = @allStopPoints[i]
 			dLat  = pos.lat- lat
 			dLng = pos.lng-lng
 			d = (dLat*dLat) + (dLng*dLng)
-			@scope.stores[i].distance = d
-			@scope.stores[i].selected = d < 0.000001
+			@allStopPoints[i].distance = d
 			
-			
-		@scope.stores.sort (a, b) ->
+		@allStopPoints.sort (a, b) ->
 			return a.distance-b.distance
+		
+		console.log "findClosest: ", @allStopPoints[0]
 			
-		@onResize()
+		# @onResize()
 
-		#workaround for apply already in progress
-		if !@scope.$$phase
-			@scope.$apply()
+		# #workaround for apply already in progress
+		# if !@scope.$$phase
+		# 	@scope.$apply()
+
+		return @allStopPoints[0]
 
 	destroy: =>
 		@w.unbind 'resize', @onResize

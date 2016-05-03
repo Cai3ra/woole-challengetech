@@ -5,10 +5,12 @@ class formDirective
 			link: ($scope, $document, $rootScope) =>
 				_elDirective    =   $document
 				_elBt      =   $document.children().eq(3)
-				console.log _elBt
+				
 				$scope.toggleExpand = () ->
-					console.log "toggleExpand"
 					angular.element(_elDirective).toggleClass "expanded"
 					false         
+				
+				$scope.submitSearch = () ->
+					$scope.$emit "request_route"
 		}
 module.exports = formDirective.init

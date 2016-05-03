@@ -67,8 +67,9 @@ class MapsController extends BaseController
 
 	setSearchBoxes:()=>
 		completeOptions =
-			types: ['geocode']
+			types: ['(address)']
 			componentRestrictions: {country: 'br'}
+
 
 		input = @querySelector('.default-input.start-input')
 		@searchStartBox = new google.maps.places.SearchBox(input)
@@ -85,18 +86,18 @@ class MapsController extends BaseController
 
 	onSearch:()=>
 		return if !@places.start or !@places.dest
-		console.log "onSearch: ", @places
+		document.querySelector(".loading-container").style.display = "block"
 		@getRoute @places.start[0].geometry.location, @places.dest[0].geometry.location
 
 		
 	getRoute: (_origLatLng, _destLatLng)=>
 		@directionsDisplay.setMap(@map)
-		console.log "@startClosest", @startClosest
+
 		_waypts = [
 			{location: new google.maps.LatLng(@startClosest.lat, @startClosest.lng), stopover: true},
 			{location: new google.maps.LatLng(@destClosest.lat, @destClosest.lng), stopover: true}
 		]
-		console.log "getRoute _waypts:", _waypts
+
 		request = {
 			origin: _origLatLng
 			destination: _destLatLng
@@ -107,9 +108,11 @@ class MapsController extends BaseController
 		
 		@directionsService.route request, (response, status) =>
 			if (status is google.maps.DirectionsStatus.OK)
-				console.log response, response.routes[0].legs[0].distance.text, response.routes[0].legs[0].duration.text
 				@directionsDisplay.setDirections response
+				@appendResults response
+				document.querySelector(".loading-container").style.display = "none"
 			else
+				document.querySelector(".loading-container").style.display = "none"
 				window.alert('Directions request failed due to ' + status)
 
 
@@ -128,6 +131,7 @@ class MapsController extends BaseController
 		return
 
 	renderPlace:(_origin)=>
+		angular.element(document.querySelector(".result-routes")).removeClass "expanded"
 		@placeMarkers.forEach (marker) ->
 			marker.setMap(null)
 			return
@@ -135,6 +139,7 @@ class MapsController extends BaseController
 
 		bounds = new google.maps.LatLngBounds()
 		angular.forEach @places, (value, key)=>
+			return if value is null
 			icon =
 				url: value[0].icon
 				size: new google.maps.Size(130, 130)
@@ -160,7 +165,6 @@ class MapsController extends BaseController
 
 		@map.fitBounds(bounds)
 		center = @map.getCenter()
-		# @findClosest(center.lat(), center.lng())
 
 	findClosest: (lat, lng) =>
 		i = @allStopPoints.length
@@ -173,23 +177,46 @@ class MapsController extends BaseController
 			
 		@allStopPoints.sort (a, b) ->
 			return a.distance-b.distance
-		
-		console.log "findClosest: ", @allStopPoints[0]
-			
-		# @onResize()
-
-		# #workaround for apply already in progress
-		# if !@scope.$$phase
-		# 	@scope.$apply()
 
 		return @allStopPoints[0]
+
+	appendResults:(results)=>
+		_form = angular.element(document.querySelector(".form-directive"))
+		_boxResults = angular.element(document.querySelector(".result-routes"))
+		_start = angular.element(document.querySelector(".result-routes .start"))
+		_stopOne = angular.element(document.querySelector(".result-routes .stop-one"))
+		_stopTwo = angular.element(document.querySelector(".result-routes .stop-two"))
+		_dest = angular.element(document.querySelector(".result-routes .dest"))
+		_dist = angular.element(document.querySelector(".result-routes .dist"))
+		
+		_start.text @places.start[0].name
+		_stopOne.text @startClosest.name
+		_stopTwo.text @destClosest.name
+		_dest.text @places.dest[0].name
+
+		_km = 0
+		_time = 0
+		for val, i in results.routes[0].legs
+			_km += val.distance.value
+			_time += val.duration.value
+
+		_distStr = @kmConverter(_km) + "Km em " + @timeConverter(_time) + "min"
+		_dist.text _distStr
+		_boxResults.toggleClass "expanded"
+		_form.toggleClass "expanded"
+
+	kmConverter:(val)=>
+		return (val/1000).toFixed(1)
+
+	timeConverter:(val)=>
+		return (val/60).toFixed(0)
 
 	destroy: =>
 		@w.unbind 'resize', @onResize
 		false
 
 	onResize: =>
-		console.log "maps resize"
+		# console.log "maps resize"
 
 	querySelector:(value) ->
 		return document.querySelector(value)

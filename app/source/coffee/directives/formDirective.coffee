@@ -5,7 +5,7 @@ class formDirective
 			link: ($scope, $document, $rootScope) =>
 				_elDirective    =   $document
 				_elBt      =   $document.children().eq(3)
-				
+
 				$scope.toggleExpand = () ->
 					angular.element(_elDirective).toggleClass "expanded"
 					false         

@@ -1,5 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-angular.module('app', ['ui.router', 'ngResource', 'ngTouch', 'dibari.angular-ellipsis']).config(function($stateProvider, $urlRouterProvider, $locationProvider) {
+angular.module('app', ['ui.router', 'ngResource', 'ngTouch', 'dibari.angular-ellipsis']).config(function($stateProvider, $urlRouterProvider, $locationProvider, $httpProvider) {
+  $httpProvider.interceptors.push('httpInterceptor');
   $urlRouterProvider.otherwise('/');
   return $stateProvider.state('main', {
     url: '/',
@@ -17,7 +18,7 @@ require('./directives');
 var ApplicationController;
 
 ApplicationController = (function() {
-  function ApplicationController($rootScope, $scope, $window) {
+  function ApplicationController($rootScope, $scope, $window, $http) {
     $rootScope.$on('$stateChangeStart', function() {
       return $window.scrollTo(0, 0);
     });
@@ -73,6 +74,9 @@ MapsController = (function(superClass) {
   function MapsController($scope, $rootScope, $element, $window, $compile) {
     this.onResize = bind(this.onResize, this);
     this.destroy = bind(this.destroy, this);
+    this.timeConverter = bind(this.timeConverter, this);
+    this.kmConverter = bind(this.kmConverter, this);
+    this.appendResults = bind(this.appendResults, this);
     this.findClosest = bind(this.findClosest, this);
     this.renderPlace = bind(this.renderPlace, this);
     this.onSearchEndBox = bind(this.onSearchEndBox, this);
@@ -147,24 +151,24 @@ MapsController = (function(superClass) {
   };
 
   MapsController.prototype.onKmlLoaded = function(doc) {
-    var i, j, len, place, ref, results;
+    var i, j, len, place, ref, results1;
     ref = doc[0].placemarks;
-    results = [];
+    results1 = [];
     for (i = j = 0, len = ref.length; j < len; i = ++j) {
       place = ref[i];
-      results.push(this.allStopPoints.push({
+      results1.push(this.allStopPoints.push({
         name: place.name,
         lat: place.latlng.lat(),
         lng: place.latlng.lng()
       }));
     }
-    return results;
+    return results1;
   };
 
   MapsController.prototype.setSearchBoxes = function() {
     var autocompleteEnd, autocompleteStart, completeOptions, input;
     completeOptions = {
-      types: ['geocode'],
+      types: ['(address)'],
       componentRestrictions: {
         country: 'br'
       }
@@ -185,14 +189,13 @@ MapsController = (function(superClass) {
     if (!this.places.start || !this.places.dest) {
       return;
     }
-    console.log("onSearch: ", this.places);
+    document.querySelector(".loading-container").style.display = "block";
     return this.getRoute(this.places.start[0].geometry.location, this.places.dest[0].geometry.location);
   };
 
   MapsController.prototype.getRoute = function(_origLatLng, _destLatLng) {
     var _waypts, request;
     this.directionsDisplay.setMap(this.map);
-    console.log("@startClosest", this.startClosest);
     _waypts = [
       {
         location: new google.maps.LatLng(this.startClosest.lat, this.startClosest.lng),
@@ -202,7 +205,6 @@ MapsController = (function(superClass) {
         stopover: true
       }
     ];
-    console.log("getRoute _waypts:", _waypts);
     request = {
       origin: _origLatLng,
       destination: _destLatLng,
@@ -213,9 +215,11 @@ MapsController = (function(superClass) {
     return this.directionsService.route(request, (function(_this) {
       return function(response, status) {
         if (status === google.maps.DirectionsStatus.OK) {
-          console.log(response, response.routes[0].legs[0].distance.text, response.routes[0].legs[0].duration.text);
-          return _this.directionsDisplay.setDirections(response);
+          _this.directionsDisplay.setDirections(response);
+          _this.appendResults(response);
+          return document.querySelector(".loading-container").style.display = "none";
         } else {
+          document.querySelector(".loading-container").style.display = "none";
           return window.alert('Directions request failed due to ' + status);
         }
       };
@@ -246,6 +250,7 @@ MapsController = (function(superClass) {
 
   MapsController.prototype.renderPlace = function(_origin) {
     var bounds, center;
+    angular.element(document.querySelector(".result-routes")).removeClass("expanded");
     this.placeMarkers.forEach(function(marker) {
       marker.setMap(null);
     });
@@ -254,6 +259,9 @@ MapsController = (function(superClass) {
     angular.forEach(this.places, (function(_this) {
       return function(value, key) {
         var icon;
+        if (value === null) {
+          return;
+        }
         icon = {
           url: value[0].icon,
           size: new google.maps.Size(130, 130),
@@ -296,8 +304,42 @@ MapsController = (function(superClass) {
     this.allStopPoints.sort(function(a, b) {
       return a.distance - b.distance;
     });
-    console.log("findClosest: ", this.allStopPoints[0]);
     return this.allStopPoints[0];
+  };
+
+  MapsController.prototype.appendResults = function(results) {
+    var _boxResults, _dest, _dist, _distStr, _form, _km, _start, _stopOne, _stopTwo, _time, i, j, len, ref, val;
+    _form = angular.element(document.querySelector(".form-directive"));
+    _boxResults = angular.element(document.querySelector(".result-routes"));
+    _start = angular.element(document.querySelector(".result-routes .start"));
+    _stopOne = angular.element(document.querySelector(".result-routes .stop-one"));
+    _stopTwo = angular.element(document.querySelector(".result-routes .stop-two"));
+    _dest = angular.element(document.querySelector(".result-routes .dest"));
+    _dist = angular.element(document.querySelector(".result-routes .dist"));
+    _start.text(this.places.start[0].name);
+    _stopOne.text(this.startClosest.name);
+    _stopTwo.text(this.destClosest.name);
+    _dest.text(this.places.dest[0].name);
+    _km = 0;
+    _time = 0;
+    ref = results.routes[0].legs;
+    for (i = j = 0, len = ref.length; j < len; i = ++j) {
+      val = ref[i];
+      _km += val.distance.value;
+      _time += val.duration.value;
+    }
+    _distStr = this.kmConverter(_km) + "Km em " + this.timeConverter(_time) + "min";
+    _dist.text(_distStr);
+    _boxResults.toggleClass("expanded");
+    return _form.toggleClass("expanded");
+  };
+
+  MapsController.prototype.kmConverter = function(val) {
+    return (val / 1000).toFixed(1);
+  };
+
+  MapsController.prototype.timeConverter = function(val) {
+    return (val / 60).toFixed(0);
   };
 
   MapsController.prototype.destroy = function() {
@@ -305,9 +347,7 @@ MapsController = (function(superClass) {
     return false;
   };
 
-  MapsController.prototype.onResize = function() {
-    return console.log("maps resize");
-  };
+  MapsController.prototype.onResize = function() {};
 
   MapsController.prototype.querySelector = function(value) {
     return document.querySelector(value);
@@ -382,6 +422,7 @@ MainController = (function(superClass) {
     ];
     setTimeout((function(_this) {
       return function() {
+        document.querySelector(".loading-container").style.display = "none";
         return _this.scope.$apply(function() {
           var el;
           el = $compile('<div class="maps-directive"></div>')(_this.scope);
@@ -435,10 +476,10 @@ module.exports = formDirective.init;
 
 
 },{}],9:[function(require,module,exports){
-angular.module('app').directive('mapsDirective', require('./mapsDirective')).directive('formDirective', require('./formDirective')).directive('modalDirective', require('./modalDirective'));
+angular.module('app').directive('mapsDirective', require('./mapsDirective')).directive('formDirective', require('./formDirective')).directive('modalDirective', require('./modalDirective')).factory('httpInterceptor', require('../utils/httpInterceptor'));
 
 
-},{"./formDirective":8,"./mapsDirective":10,"./modalDirective":11}],10:[function(require,module,exports){
+},{"../utils/httpInterceptor":13,"./formDirective":8,"./mapsDirective":10,"./modalDirective":11}],10:[function(require,module,exports){
 var mapsDirective;
 
 mapsDirective = (function() {
@@ -677,6 +718,36 @@ MapStyles = (function() {
 })();
 
 module.exports = MapStyles;
+
+
+},{}],13:[function(require,module,exports){
+var httpInterceptor;
+
+httpInterceptor = (function() {
+  function httpInterceptor($q, $location, $injector) {
+    return {
+      "request": function(config) {
+        document.querySelector(".loading-container").style.display = "block";
+        return config;
+      },
+      "response": function(response) {
+        document.querySelector(".loading-container").style.opacity = "0";
+        setTimeout((function(_this) {
+          return function() {
+            return document.querySelector(".loading-container").style.display = "none";
+          };
+        })(this), 300);
+        return response;
+      },
+      "responseError": function(response) {}
+    };
+  }
+
+  return httpInterceptor;
+
+})();
+
+module.exports = httpInterceptor;
 
 
 },{}]},{},[1]);

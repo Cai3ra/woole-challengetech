@@ -12,6 +12,7 @@ class MainController extends BaseController
 		]
 
 		setTimeout =>
+			document.querySelector(".loading-container").style.display = "none"
 			@scope.$apply =>
 				el = $compile('<div class="maps-directive"></div>')(@scope)
 				angular.element(document.querySelector(".maps-box")).append el

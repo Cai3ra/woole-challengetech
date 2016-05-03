@@ -1,5 +1,5 @@
 class ApplicationController
-    constructor: ($rootScope, $scope, $window) ->
+    constructor: ($rootScope, $scope, $window,$http) ->
 
         $rootScope.$on '$stateChangeStart', ->
             $window.scrollTo(0,0)

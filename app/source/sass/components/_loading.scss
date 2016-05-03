@@ -1,0 +1,56 @@
+.loading-container{
+	@include set-size(100%, 100vh);
+	@include center();
+	position: fixed;
+	background-color: rgba(0,0,0,0.6);
+	z-index: 25;
+
+	.loading-balls {
+		@include set-size(24px, 24px);
+		@include center();
+		position: absolute;
+
+		.ball {
+			position: absolute;
+			@include set-size(23px, 23px);
+			opacity: 0;
+			@include transform(rotate(225deg));
+			@include animation(orbit 4s infinite);
+
+			.inner-ball {
+				position: absolute;
+				@include set-size(5px, 5px);
+				background: $yellow;
+				left:0px;
+				top:0px;
+				border-radius: 5px;
+			}
+
+		}
+
+		#ball_1 {
+			animation-delay: 1s;
+			-webkit-animation-delay: 1s;
+		}
+
+		#ball_2 {
+			animation-delay: 0.2s;
+			-webkit-animation-delay: 0.2s;
+		}
+		
+		#ball_3 {
+			animation-delay: 0.4s;
+			-webkit-animation-delay: 0.4s;
+		}
+
+		#ball_4 {
+			animation-delay: 0.6s;
+			-webkit-animation-delay: 0.6s;
+		}
+
+		#ball_5 {
+			animation-delay: 0.8s;
+			-webkit-animation-delay: 0.8s;
+		}
+	}
+}

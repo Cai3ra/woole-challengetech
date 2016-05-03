@@ -43,3 +43,30 @@
 		@include transform(translateX(0%));
 	}
 }
+
+@include keyframes (orbit) {
+	0% {
+		opacity: 1;
+		z-index:99;
+		@include transform(rotate(180deg));
+		@include transition(ease-out);
+	}
+
+	75% {
+		opacity: 1;
+		@include transform(rotate(900deg));
+		@include transition(ease-out);
+		-webkit-origin:70%;
+		origin:0%;
+	}
+
+	76% {
+		opacity: 0;
+		@include transform(rotate(900deg));
+	}
+
+	100% {
+		opacity: 0;
+		@include transform(rotate(900deg));
+	}
+}

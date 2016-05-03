@@ -10,6 +10,7 @@
 	padding: 10px 10px 20px 10px;
     background-color: #021019;
     opacity: 0.9;
+    margin-top: -4px;
     @include transition(transform 0.6s $ease-in-out);
 
     &.expanded{

@@ -10,7 +10,7 @@ angular
 	#route for the main
 	.state 'main',
 		url: '/'
-		templateUrl: '/views/main.html'
+		templateUrl: 'woole-challengetech/views/main.html'
 		controller: 'MainController'
 
 require './controllers'

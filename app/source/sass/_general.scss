@@ -9,6 +9,11 @@ body, html {
     -webkit-tap-highlight-color: transparent; 
     overflow: hidden;
     background-color: #000;
+    @include set-size(100%, 100%);
+    @include maxWidth(1023) {
+    	overflow-x: hidden;
+    	overflow-y: auto;
+    }
 }
 
 body, html, input, a, div, section, article, h1, {
@@ -34,6 +39,7 @@ b, strong{
 	clear: both;
 
 	#content-page {
+		position: relative;
 		@include set-size(100%, 100vh);
 
 		.center-view{

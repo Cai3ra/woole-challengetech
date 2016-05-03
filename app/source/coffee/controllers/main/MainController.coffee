@@ -8,15 +8,16 @@ class MainController extends BaseController
 		@compile = $compile
 		@element = $element
 		@scope.templates = [
-			{ class: "", url: "views/partials/maps.html" }
+			{ class: "", url: "woole-challengetech/views/partials/maps.html" }
 		]
 
-		setTimeout =>
+		angular.element(document).ready =>
 			document.querySelector(".loading-container").style.display = "none"
 			@scope.$apply =>
 				el = $compile('<div class="maps-directive"></div>')(@scope)
 				angular.element(document.querySelector(".maps-box")).append el
-		, 500
+				angular.element(document.getElementById("content-page")).css "height", window.innerHeight + "px"
+
 		super($scope)
 
 	destroy: =>

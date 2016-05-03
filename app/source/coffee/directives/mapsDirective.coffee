@@ -2,7 +2,7 @@ class mapsDirective
 	@loadScript: ($window)=>
 		if !$window.google?
 			clusterTag = document.createElement('script')
-			clusterTag.src = 'js/libs/lazy/markerclusterer_compiled.js'
+			clusterTag.src = 'woole-challengetech/js/libs/lazy/markerclusterer_compiled.js'
 			document.body.appendChild(clusterTag)
 			
 			mapsKey = 'AIzaSyDDWLyi8QG0CjcQdC-3efc6pPTdhubCO38'
@@ -26,7 +26,7 @@ class mapsDirective
 			restrict: 'AC'
 			controller: 'MapsController'
 			controllerAs: 'maps'
-			templateUrl: 'views/partials/maps.html'
+			templateUrl: 'woole-challengetech/views/partials/maps.html'
 			link: (controller) =>
 				@lazyLoad($window, $q).then ->
 					if $window.google? and $window.google.maps?

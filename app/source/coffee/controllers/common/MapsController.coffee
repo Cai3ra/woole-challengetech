@@ -159,8 +159,10 @@ class MapsController extends BaseController
 				bounds.extend(value[0].geometry.location)
 
 			if _origin is "start"
+				@startClosest = null
 				@startClosest = @findClosest value[0].geometry.location.lat(), value[0].geometry.location.lng()
 			else if _origin is "dest"
+				@destClosest = null
 				@destClosest = @findClosest value[0].geometry.location.lat(), value[0].geometry.location.lng()
 
 		@map.fitBounds(bounds)
@@ -189,10 +191,10 @@ class MapsController extends BaseController
 		_dest = angular.element(document.querySelector(".result-routes .dest"))
 		_dist = angular.element(document.querySelector(".result-routes .dist"))
 		
-		_start.text @places.start[0].name
-		_stopOne.text @startClosest.name
-		_stopTwo.text @destClosest.name
-		_dest.text @places.dest[0].name
+		_start.empty().text @places.start[0].name
+		_stopOne.empty().text @startClosest.name
+		_stopTwo.empty().text @destClosest.name
+		_dest.empty().text @places.dest[0].name
 
 		_km = 0
 		_time = 0
@@ -201,7 +203,7 @@ class MapsController extends BaseController
 			_time += val.duration.value
 
 		_distStr = @kmConverter(_km) + "Km em " + @timeConverter(_time) + "min"
-		_dist.text _distStr
+		_dist.empty().text _distStr
 		_boxResults.toggleClass "expanded"
 		_form.toggleClass "expanded"
 

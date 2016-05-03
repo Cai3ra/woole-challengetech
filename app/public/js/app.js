@@ -4,7 +4,7 @@ angular.module('app', ['ui.router', 'ngResource', 'ngTouch', 'dibari.angular-ell
   $urlRouterProvider.otherwise('/');
   return $stateProvider.state('main', {
     url: '/',
-    templateUrl: '/views/main.html',
+    templateUrl: 'woole-challengetech/views/main.html',
     controller: 'MainController'
   });
 });
@@ -281,8 +281,10 @@ MapsController = (function(superClass) {
           bounds.extend(value[0].geometry.location);
         }
         if (_origin === "start") {
+          _this.startClosest = null;
           return _this.startClosest = _this.findClosest(value[0].geometry.location.lat(), value[0].geometry.location.lng());
         } else if (_origin === "dest") {
+          _this.destClosest = null;
           return _this.destClosest = _this.findClosest(value[0].geometry.location.lat(), value[0].geometry.location.lng());
         }
       };
@@ -316,10 +318,10 @@ MapsController = (function(superClass) {
     _stopTwo = angular.element(document.querySelector(".result-routes .stop-two"));
     _dest = angular.element(document.querySelector(".result-routes .dest"));
     _dist = angular.element(document.querySelector(".result-routes .dist"));
-    _start.text(this.places.start[0].name);
-    _stopOne.text(this.startClosest.name);
-    _stopTwo.text(this.destClosest.name);
-    _dest.text(this.places.dest[0].name);
+    _start.empty().text(this.places.start[0].name);
+    _stopOne.empty().text(this.startClosest.name);
+    _stopTwo.empty().text(this.destClosest.name);
+    _dest.empty().text(this.places.dest[0].name);
     _km = 0;
     _time = 0;
     ref = results.routes[0].legs;
@@ -329,7 +331,7 @@ MapsController = (function(superClass) {
       _time += val.duration.value;
     }
     _distStr = this.kmConverter(_km) + "Km em " + this.timeConverter(_time) + "min";
-    _dist.text(_distStr);
+    _dist.empty().text(_distStr);
     _boxResults.toggleClass("expanded");
     return _form.toggleClass("expanded");
   };
@@ -417,19 +419,20 @@ MainController = (function(superClass) {
     this.scope.templates = [
       {
         "class": "",
-        url: "views/partials/maps.html"
+        url: "woole-challengetech/views/partials/maps.html"
       }
     ];
-    setTimeout((function(_this) {
+    angular.element(document).ready((function(_this) {
       return function() {
         document.querySelector(".loading-container").style.display = "none";
         return _this.scope.$apply(function() {
           var el;
           el = $compile('<div class="maps-directive"></div>')(_this.scope);
-          return angular.element(document.querySelector(".maps-box")).append(el);
+          angular.element(document.querySelector(".maps-box")).append(el);
+          return angular.element(document.getElementById("content-page")).css("height", window.innerHeight + "px");
         });
       };
-    })(this), 500);
+    })(this));
     MainController.__super__.constructor.call(this, $scope);
   }
 
@@ -489,7 +492,7 @@ mapsDirective = (function() {
     var clusterTag, mapsKey, tag;
     if ($window.google == null) {
       clusterTag = document.createElement('script');
-      clusterTag.src = 'js/libs/lazy/markerclusterer_compiled.js';
+      clusterTag.src = 'woole-challengetech/js/libs/lazy/markerclusterer_compiled.js';
       document.body.appendChild(clusterTag);
       mapsKey = 'AIzaSyDDWLyi8QG0CjcQdC-3efc6pPTdhubCO38';
       tag = document.createElement('script');
@@ -515,7 +518,7 @@ mapsDirective = (function() {
       restrict: 'AC',
       controller: 'MapsController',
       controllerAs: 'maps',
-      templateUrl: 'views/partials/maps.html',
+      templateUrl: 'woole-challengetech/views/partials/maps.html',
       link: function(controller) {
         return mapsDirective.lazyLoad($window, $q).then(function() {
           if (($window.google != null) && ($window.google.maps != null)) {

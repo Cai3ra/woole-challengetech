@@ -13,7 +13,7 @@ require('./controllers');
 require('./directives');
 
 
-},{"./controllers":6,"./directives":8}],2:[function(require,module,exports){
+},{"./controllers":6,"./directives":9}],2:[function(require,module,exports){
 var ApplicationController;
 
 ApplicationController = (function() {
@@ -58,12 +58,14 @@ module.exports = BaseController;
 
 
 },{}],4:[function(require,module,exports){
-var BaseController, MapsController,
+var BaseController, MapStyles, MapsController,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
   hasProp = {}.hasOwnProperty;
 
 BaseController = require('../BaseController');
+
+MapStyles = require('../../utils/MapStyles');
 
 MapsController = (function(superClass) {
   extend(MapsController, superClass);
@@ -77,6 +79,8 @@ MapsController = (function(superClass) {
     this.onSearchStartBox = bind(this.onSearchStartBox, this);
     this.getRoute = bind(this.getRoute, this);
     this.onSearch = bind(this.onSearch, this);
+    this.setSearchBoxes = bind(this.setSearchBoxes, this);
+    this.setStopPoints = bind(this.setStopPoints, this);
     MapsController.__super__.constructor.call(this, $scope);
     this.scope = $scope;
     this.compile = $compile;
@@ -102,14 +106,14 @@ MapsController = (function(superClass) {
   };
 
   MapsController.prototype.configureMap = function() {
-    var autocompleteEnd, autocompleteStart, completeOptions, input, mapElement, mapOptions;
+    var mapElement, mapOptions;
     mapElement = this.querySelector('.map');
     this.geocoder = new google.maps.Geocoder();
     this.directionsService = new google.maps.DirectionsService();
     this.directionsDisplay = new google.maps.DirectionsRenderer();
     mapOptions = {
       center: new google.maps.LatLng(-23.5874, -46.6576),
-      zoom: 14,
+      zoom: 8,
       mapTypeId: google.maps.MapTypeId.ROADMAP,
       zoomControlOptions: {
         position: google.maps.ControlPosition.TOP_RIGHT
@@ -120,137 +124,24 @@ MapsController = (function(superClass) {
     };
     this.map = new google.maps.Map(mapElement, mapOptions);
     this.map.getCenter();
-    this.styles = [
-      {
-        "featureType": "all",
-        "elementType": "labels.text.fill",
-        "stylers": [
-          {
-            "color": "#ffffff"
-          }
-        ]
-      }, {
-        "featureType": "all",
-        "elementType": "labels.text.stroke",
-        "stylers": [
-          {
-            "color": "#000000"
-          }, {
-            "lightness": 13
-          }
-        ]
-      }, {
-        "featureType": "administrative",
-        "elementType": "geometry.fill",
-        "stylers": [
-          {
-            "color": "#000000"
-          }
-        ]
-      }, {
-        "featureType": "administrative",
-        "elementType": "geometry.stroke",
-        "stylers": [
-          {
-            "color": "#144b53"
-          }, {
-            "lightness": 14
-          }, {
-            "weight": 1.4
-          }
-        ]
-      }, {
-        "featureType": "landscape",
-        "elementType": "all",
-        "stylers": [
-          {
-            "color": "#08304b"
-          }
-        ]
-      }, {
-        "featureType": "poi",
-        "elementType": "geometry",
-        "stylers": [
-          {
-            "color": "#0c4152"
-          }, {
-            "lightness": 5
-          }
-        ]
-      }, {
-        "featureType": "road.highway",
-        "elementType": "geometry.fill",
-        "stylers": [
-          {
-            "color": "#FF9715"
-          }
-        ]
-      }, {
-        "featureType": "road.highway",
-        "elementType": "geometry.stroke",
-        "stylers": [
-          {
-            "color": "#0b434f"
-          }, {
-            "lightness": 25
-          }
-        ]
-      }, {
-        "featureType": "road.arterial",
-        "elementType": "geometry.fill",
-        "stylers": [
-          {
-            "color": "#FF9715"
-          }
-        ]
-      }, {
-        "featureType": "road.arterial",
-        "elementType": "geometry.stroke",
-        "stylers": [
-          {
-            "color": "#0b3d51"
-          }, {
-            "lightness": 16
-          }
-        ]
-      }, {
-        "featureType": "road.local",
-        "elementType": "geometry.fill",
-        "stylers": [
-          {
-            "color": "#000000"
-          }
-        ]
-      }, {
-        "featureType": "road.local",
-        "elementType": "geometry.stroke",
-        "stylers": [
-          {
-            "color": "#FF9715"
-          }
-        ]
-      }, {
-        "featureType": "transit",
-        "elementType": "all",
-        "stylers": [
-          {
-            "color": "#146474"
-          }
-        ]
-      }, {
-        "featureType": "water",
-        "elementType": "all",
-        "stylers": [
-          {
-            "color": "#021019"
-          }
-        ]
-      }
-    ];
     this.map.setOptions({
-      styles: this.styles
+      styles: MapStyles.woole()
     });
     this.placeMarkers = [];
+    this.setStopPoints();
+    this.setSearchBoxes();
+  };
+
+  MapsController.prototype.setStopPoints = function() {
+    console.log("setStopPoints");
+    return this.kmlLayer = new google.maps.KmlLayer({
+      url: 'http://c4i3r4.co/woole-challengetech/data/stop_points.kml',
+      map: this.map
+    });
+  };
+
+  MapsController.prototype.setSearchBoxes = function() {
+    var autocompleteEnd, autocompleteStart, completeOptions, input;
     completeOptions = {
       types: ['geocode'],
       componentRestrictions: {
@@ -266,7 +157,7 @@ MapsController = (function(superClass) {
     this.searchEndBox = new google.maps.places.SearchBox(input);
     this.searchEndBox.addListener('places_changed', this.onSearchEndBox);
     autocompleteEnd = new google.maps.places.Autocomplete(input, completeOptions);
-    autocompleteEnd.bindTo('bounds', this.map);
+    return autocompleteEnd.bindTo('bounds', this.map);
   };
 
   MapsController.prototype.onSearch = function() {
@@ -395,7 +286,7 @@ MapsController = (function(superClass) {
 module.exports = MapsController;
 
 
-},{"../BaseController":3}],5:[function(require,module,exports){
+},{"../../utils/MapStyles":12,"../BaseController":3}],5:[function(require,module,exports){
 var BaseController, ModalController,
   bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
   extend = function(child, parent) { for (var key in parent) { if (hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
@@ -445,7 +336,6 @@ MainController = (function(superClass) {
 
   function MainController($scope, $rootScope, $compile, $element) {
     this.destroy = bind(this.destroy, this);
-    console.log("MainController");
     this.scope = $scope;
     this.rootScope = $rootScope;
     this.compile = $compile;
@@ -458,7 +348,6 @@ MainController = (function(superClass) {
     ];
     setTimeout((function(_this) {
       return function() {
-        console.log(_this.element);
         return _this.scope.$apply(function() {
           var el;
           el = $compile('<div class="maps-directive"></div>')(_this.scope);
@@ -481,10 +370,40 @@ module.exports = MainController;
 
 
 },{"../BaseController":3}],8:[function(require,module,exports){
-angular.module('app').directive('mapsDirective', require('./mapsDirective')).directive('modalDirective', require('./modalDirective'));
+var formDirective;
+
+formDirective = (function() {
+  function formDirective() {}
+
+  formDirective.init = function($window, $rootScope) {
+    return {
+      restrict: 'AC',
+      link: function($scope, $document, $rootScope) {
+        var _elBt, _elDirective;
+        _elDirective = $document;
+        _elBt = $document.children().eq(3);
+        console.log(_elBt);
+        return $scope.toggleExpand = function() {
+          console.log("toggleExpand");
+          angular.element(_elDirective).toggleClass("expanded");
+          return false;
+        };
+      }
+    };
+  };
+
+  return formDirective;
+
+})();
+
+module.exports = formDirective.init;
 
 
-},{"./mapsDirective":9,"./modalDirective":10}],9:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
+angular.module('app').directive('mapsDirective', require('./mapsDirective')).directive('formDirective', require('./formDirective')).directive('modalDirective', require('./modalDirective'));
+
+
+},{"./formDirective":8,"./mapsDirective":10,"./modalDirective":11}],10:[function(require,module,exports){
 var mapsDirective;
 
 mapsDirective = (function() {
@@ -540,7 +459,7 @@ mapsDirective = (function() {
 module.exports = mapsDirective.create;
 
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 var modalDirective;
 
 modalDirective = (function() {
@@ -580,6 +499,149 @@ modalDirective = (function() {
 })();
 
 module.exports = modalDirective.create;
+
+
+},{}],12:[function(require,module,exports){
+var MapStyles;
+
+MapStyles = (function() {
+  function MapStyles() {}
+
+  MapStyles.woole = function() {
+    return [
+      {
+        "featureType": "all",
+        "elementType": "labels.text.fill",
+        "stylers": [
+          {
+            "color": "#ffffff"
+          }
+        ]
+      }, {
+        "featureType": "all",
+        "elementType": "labels.text.stroke",
+        "stylers": [
+          {
+            "color": "#000000"
+          }, {
+            "lightness": 13
+          }
+        ]
+      }, {
+        "featureType": "administrative",
+        "elementType": "geometry.fill",
+        "stylers": [
+          {
+            "color": "#000000"
+          }
+        ]
+      }, {
+        "featureType": "administrative",
+        "elementType": "geometry.stroke",
+        "stylers": [
+          {
+            "color": "#144b53"
+          }, {
+            "lightness": 14
+          }, {
+            "weight": 1.4
+          }
+        ]
+      }, {
+        "featureType": "landscape",
+        "elementType": "all",
+        "stylers": [
+          {
+            "color": "#08304b"
+          }
+        ]
+      }, {
+        "featureType": "poi",
+        "elementType": "geometry",
+        "stylers": [
+          {
+            "color": "#0c4152"
+          }, {
+            "lightness": 5
+          }
+        ]
+      }, {
+        "featureType": "road.highway",
+        "elementType": "geometry.fill",
+        "stylers": [
+          {
+            "color": "#FF9715"
+          }
+        ]
+      }, {
+        "featureType": "road.highway",
+        "elementType": "geometry.stroke",
+        "stylers": [
+          {
+            "color": "#0b434f"
+          }, {
+            "lightness": 25
+          }
+        ]
+      }, {
+        "featureType": "road.arterial",
+        "elementType": "geometry.fill",
+        "stylers": [
+          {
+            "color": "#FF9715"
+          }
+        ]
+      }, {
+        "featureType": "road.arterial",
+        "elementType": "geometry.stroke",
+        "stylers": [
+          {
+            "color": "#0b3d51"
+          }, {
+            "lightness": 16
+          }
+        ]
+      }, {
+        "featureType": "road.local",
+        "elementType": "geometry.fill",
+        "stylers": [
+          {
+            "color": "#000000"
+          }
+        ]
+      }, {
+        "featureType": "road.local",
+        "elementType": "geometry.stroke",
+        "stylers": [
+          {
+            "color": "#FF9715"
+          }
+        ]
+      }, {
+        "featureType": "transit",
+        "elementType": "all",
+        "stylers": [
+          {
+            "color": "#146474"
+          }
+        ]
+      }, {
+        "featureType": "water",
+        "elementType": "all",
+        "stylers": [
+          {
+            "color": "#021019"
+          }
+        ]
+      }
+    ];
+  };
+
+  return MapStyles;
+
+})();
+
+module.exports = MapStyles;
 
 
 },{}]},{},[1]);

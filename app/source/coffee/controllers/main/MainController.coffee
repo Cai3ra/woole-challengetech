@@ -2,7 +2,7 @@ BaseController = require '../BaseController'
 
 class MainController extends BaseController
 	constructor: ($scope, $rootScope, $compile, $element) ->
-		console.log "MainController"
+		# console.log "MainController"
 		@scope = $scope
 		@rootScope = $rootScope
 		@compile = $compile
@@ -12,7 +12,6 @@ class MainController extends BaseController
 		]
 
 		setTimeout =>
-			console.log @element
 			@scope.$apply =>
 				el = $compile('<div class="maps-directive"></div>')(@scope)
 				angular.element(document.querySelector(".maps-box")).append el

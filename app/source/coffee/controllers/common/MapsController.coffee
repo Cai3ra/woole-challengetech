@@ -1,4 +1,5 @@
 BaseController = require '../BaseController'
+MapStyles = require '../../utils/MapStyles'
 
 class MapsController extends BaseController
 	constructor: ($scope, $element, $window, $compile) ->
@@ -24,170 +25,42 @@ class MapsController extends BaseController
 	configureMap: () ->
 		mapElement = @querySelector('.map')
 		@geocoder = new google.maps.Geocoder()
+		
 		@directionsService = new google.maps.DirectionsService()
 		@directionsDisplay = new google.maps.DirectionsRenderer()
 
 		mapOptions =
 			center: new google.maps.LatLng(-23.5874, -46.6576)
-			zoom: 14
+			zoom: 8
 			mapTypeId: google.maps.MapTypeId.ROADMAP
 			zoomControlOptions: position: google.maps.ControlPosition.TOP_RIGHT
 			panControlOptions: position: google.maps.ControlPosition.TOP_RIGHT
 		@map = new google.maps.Map(mapElement, mapOptions)
 		@map.getCenter()
 		
-		@styles = [
-			{
-				"featureType": "all",
-				"elementType": "labels.text.fill",
-				"stylers": [
-					{
-					"color": "#ffffff"
-					}
-				]
-		   },
-		   {
-			   "featureType": "all",
-			   "elementType": "labels.text.stroke",
-			   "stylers": [
-				   {
-					   "color": "#000000"
-				   },
-				   {
-					   "lightness": 13
-				   }
-			   ]
-		   },
-		   {
-			   "featureType": "administrative",
-			   "elementType": "geometry.fill",
-			   "stylers": [
-				   {
-					   "color": "#000000"
-				   }
-			   ]
-		   },
-		   {
-			   "featureType": "administrative",
-			   "elementType": "geometry.stroke",
-			   "stylers": [
-				   {
-					   "color": "#144b53"
-				   },
-				   {
-					   "lightness": 14
-				   },
-				   {
-					   "weight": 1.4
-				   }
-			   ]
-		   },
-		   {
-			   "featureType": "landscape",
-			   "elementType": "all",
-			   "stylers": [
-				   {
-					   "color": "#08304b"
-				   }
-			   ]
-		   },
-		   {
-			   "featureType": "poi",
-			   "elementType": "geometry",
-			   "stylers": [
-				   {
-					   "color": "#0c4152"
-				   },
-				   {
-					   "lightness": 5
-				   }
-			   ]
-		   },
-		   {
-			   "featureType": "road.highway",
-			   "elementType": "geometry.fill",
-			   "stylers": [
-				   {
-					   "color": "#FF9715"
-				   }
-			   ]
-		   },
-		   {
-			   "featureType": "road.highway",
-			   "elementType": "geometry.stroke",
-			   "stylers": [
-				   {
-					   "color": "#0b434f"
-				   },
-				   {
-					   "lightness": 25
-				   }
-			   ]
-		   },
-		   {
-			   "featureType": "road.arterial",
-			   "elementType": "geometry.fill",
-			   "stylers": [
-				   {
-					   "color": "#FF9715"
-				   }
-			   ]
-		   },
-		   {
-			   "featureType": "road.arterial",
-			   "elementType": "geometry.stroke",
-			   "stylers": [
-				   {
-					   "color": "#0b3d51"
-				   },
-				   {
-					   "lightness": 16
-				   }
-			   ]
-		   },
-		   {
-			   "featureType": "road.local",
-			   "elementType": "geometry.fill",
-			   "stylers": [
-				   {
-					   "color": "#000000"
-				   }
-			   ]
-		   },
-		   {
-			   "featureType": "road.local",
-			   "elementType": "geometry.stroke",
-			   "stylers": [
-				   {
-					   "color": "#FF9715"
-				   }
-			   ]
-		   },
-		   {
-			   "featureType": "transit",
-			   "elementType": "all",
-			   "stylers": [
-				   {
-					   "color": "#146474"
-				   }
-			   ]
-		   },
-		   {
-			   "featureType": "water",
-			   "elementType": "all",
-			   "stylers": [
-				   {
-					   "color": "#021019"
-				   }
-			   ]
-		   }
-		]
-		@map.setOptions {styles: @styles}
+		@map.setOptions {styles: MapStyles.woole()}
 		@placeMarkers = []
+
+		@setStopPoints()
+		@setSearchBoxes()
+
+		# @map.fitBounds(bounds)
+		# center = @map.getCenter()
+		# @findClosest(center.lat(), center.lng())		
+		return
+
+	setStopPoints:()=>
+		console.log "setStopPoints"
+		@kmlLayer = new google.maps.KmlLayer {
+			url: 'http://c4i3r4.co/woole-challengetech/data/stop_points.kml'
+			map: @map
+		}
+
+	setSearchBoxes:()=>
 		completeOptions =
 			types: ['geocode']
 			componentRestrictions: {country: 'br'}
-			
+
 		input = @querySelector('.default-input.start-input')
 		@searchStartBox = new google.maps.places.SearchBox(input)
 		@searchStartBox.addListener('places_changed', @onSearchStartBox)
@@ -199,13 +72,7 @@ class MapsController extends BaseController
 		@searchEndBox.addListener('places_changed', @onSearchEndBox)
 		autocompleteEnd = new google.maps.places.Autocomplete(input,completeOptions)
 		autocompleteEnd.bindTo('bounds', @map)
-
-		# @map.fitBounds(bounds)
-		# center = @map.getCenter()
-		# @findClosest(center.lat(), center.lng())
-
 		
-		return
 
 	onSearch:()=>
 		return if !@places.start or !@places.dest

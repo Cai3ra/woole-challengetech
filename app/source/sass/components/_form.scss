@@ -2,11 +2,19 @@
 	@include set-size(80%, auto);
 	@include center-x;
 	position: absolute;
+	@include transform(translateX(-50%) translateY(-100%));
 	max-width: 480px;
+	border: 4px solid $yellow;
+	border-top: none;
 	z-index: 1;
 	padding: 10px 10px 20px 10px;
     background-color: #021019;
     opacity: 0.9;
+    @include transition(transform 0.6s $ease-in-out);
+
+    &.expanded{
+    	@include transform(translateX(-50%) translateY(0%));
+    }
 
 	.default-label{
 		@include set-size(100%, 32px);
@@ -36,5 +44,22 @@
 		font-family: $font; 
 		@include font-size(18);
 		color: $yellow;
+		cursor: pointer;
+	}
+
+	.bt-expand{
+		@include set-size(60%, 50px);
+		@include center-x;
+		position: absolute;
+		@include font-size(18);
+		font-family: $font; 
+		line-height: 50px;
+		margin-top: 20px;
+		background-color: #021019;
+		color: $yellow;
+		text-align: center;
+		cursor: pointer;
+		border: 4px solid $yellow;
+		border-top: none;
 	}
 }

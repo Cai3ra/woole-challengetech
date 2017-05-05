@@ -49,7 +49,7 @@ class MapsController extends BaseController
 		@setSearchBoxes()
 
 	setStopPoints:()=>
-		_kmlUrl = 'http://c4i3r4.co/woole-challengetech/data/stop_points.kml'
+		_kmlUrl = 'http://c4i3r4.co/challengetech/stop_points.kml'
 		_kmlOptions = {
 			afterParse: @onKmlLoaded
 			map: @map
@@ -208,10 +208,10 @@ class MapsController extends BaseController
 		_form.toggleClass "expanded"
 
 	kmConverter:(val)=>
-		return (val/1000).toFixed(1)
+		return (val / 1000).toFixed(1)
 
 	timeConverter:(val)=>
-		return (val/60).toFixed(0)
+		return (val / 60).toFixed(0)
 
 	destroy: =>
 		@w.unbind 'resize', @onResize

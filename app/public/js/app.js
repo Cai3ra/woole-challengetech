@@ -4,7 +4,7 @@ angular.module('app', ['ui.router', 'ngResource', 'ngTouch', 'dibari.angular-ell
   $urlRouterProvider.otherwise('/');
   return $stateProvider.state('main', {
     url: '/',
-    templateUrl: 'woole-challengetech/views/main.html',
+    templateUrl: 'views/main.html',
     controller: 'MainController'
   });
 });
@@ -141,7 +141,7 @@ MapsController = (function(superClass) {
 
   MapsController.prototype.setStopPoints = function() {
     var _kmlOptions, _kmlUrl;
-    _kmlUrl = 'http://c4i3r4.co/woole-challengetech/data/stop_points.kml';
+    _kmlUrl = 'http://c4i3r4.co/challengetech/stop_points.kml';
     _kmlOptions = {
       afterParse: this.onKmlLoaded,
       map: this.map
@@ -492,7 +492,7 @@ mapsDirective = (function() {
     var clusterTag, mapsKey, tag;
     if ($window.google == null) {
       clusterTag = document.createElement('script');
-      clusterTag.src = 'woole-challengetech/js/libs/lazy/markerclusterer_compiled.js';
+      clusterTag.src = 'js/libs/lazy/markerclusterer_compiled.js';
       document.body.appendChild(clusterTag);
       mapsKey = 'AIzaSyDDWLyi8QG0CjcQdC-3efc6pPTdhubCO38';
       tag = document.createElement('script');
@@ -518,7 +518,7 @@ mapsDirective = (function() {
       restrict: 'AC',
       controller: 'MapsController',
       controllerAs: 'maps',
-      templateUrl: 'woole-challengetech/views/partials/maps.html',
+      templateUrl: 'views/partials/maps.html',
       link: function(controller) {
         return mapsDirective.lazyLoad($window, $q).then(function() {
           if (($window.google != null) && ($window.google.maps != null)) {

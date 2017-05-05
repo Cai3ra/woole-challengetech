@@ -16,6 +16,7 @@ class MapsController extends BaseController
 		@originDirection = null
 		@searchStartBox = null
 		@searchEndBox = null
+		@selectedTravelMode = "DRIVING"
 		@places = {start: null, dest: null}
 		@allStopPoints = []
 		
@@ -31,7 +32,14 @@ class MapsController extends BaseController
 		@geocoder = new google.maps.Geocoder()
 		
 		@directionsService = new google.maps.DirectionsService()
-		@directionsDisplay = new google.maps.DirectionsRenderer()
+		@directionsDisplay = new google.maps.DirectionsRenderer({
+			polylineOptions: {
+				strokeColor: "purple",
+				strokeOpacity: 0.6,
+				strokeWeight: 5
+			}
+		})
+
 
 		mapOptions =
 			center: new google.maps.LatLng(-23.5874, -46.6576)
@@ -41,12 +49,13 @@ class MapsController extends BaseController
 			panControlOptions: position: google.maps.ControlPosition.TOP_RIGHT
 		@map = new google.maps.Map(mapElement, mapOptions)
 		@map.getCenter()
-		
-		@map.setOptions {styles: MapStyles.woole()}
+
+		# @map.setOptions {styles: MapStyles.woole()}
 		@placeMarkers = []
 
 		@setStopPoints()
 		@setSearchBoxes()
+		@setSelectTravels()
 
 	setStopPoints:()=>
 		_kmlUrl = 'http://c4i3r4.co/challengetech/stop_points.kml'
@@ -70,7 +79,6 @@ class MapsController extends BaseController
 			types: ['(address)']
 			componentRestrictions: {country: 'br'}
 
-
 		input = @querySelector('.default-input.start-input')
 		@searchStartBox = new google.maps.places.SearchBox(input)
 		@searchStartBox.addListener('places_changed', @onSearchStartBox)
@@ -83,6 +91,9 @@ class MapsController extends BaseController
 		autocompleteEnd = new google.maps.places.Autocomplete(input,completeOptions)
 		autocompleteEnd.bindTo('bounds', @map)
 		
+	setSelectTravels:()=>
+		document.getElementById('travel-mode').addEventListener 'change', =>
+			@selectedTravelMode = document.getElementById('travel-mode').value
 
 	onSearch:()=>
 		return if !@places.start or !@places.dest
@@ -92,23 +103,24 @@ class MapsController extends BaseController
 		
 	getRoute: (_origLatLng, _destLatLng)=>
 		@directionsDisplay.setMap(@map)
-
+		@directionsDisplay.setPanel document.getElementById('travel-route')
 		_waypts = [
 			{location: new google.maps.LatLng(@startClosest.lat, @startClosest.lng), stopover: true},
 			{location: new google.maps.LatLng(@destClosest.lat, @destClosest.lng), stopover: true}
 		]
-
+		
 		request = {
 			origin: _origLatLng
 			destination: _destLatLng
-			travelMode: google.maps.TravelMode.BICYCLING
+			travelMode: @selectedTravelMode
 			waypoints: _waypts
 			optimizeWaypoints: true
 		}
+			# travelMode: google.maps.TravelMode.BICYCLING
 		
 		@directionsService.route request, (response, status) =>
 			if (status is google.maps.DirectionsStatus.OK)
-				@directionsDisplay.setDirections response
+				@directionsDisplay.setDirections response				
 				@appendResults response
 				document.querySelector(".loading-container").style.display = "none"
 			else
@@ -152,6 +164,7 @@ class MapsController extends BaseController
 				icon: icon
 				title: value[0].name
 				position: value[0].geometry.location
+				# json: {id: key}
 
 			if (value[0].geometry.viewport)
 				bounds.union(value[0].geometry.viewport)

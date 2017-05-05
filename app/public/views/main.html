@@ -4,7 +4,13 @@
 			<h1 class="title"></h1>
 		</div>
 		<div class="maps-box"></div>
-		<!-- <div class="{{template.class}}" ng-include="template.url" ng-repeat="template in templates"></div> -->
+		<select id="travel-mode">
+			<option value="DRIVING">Driving</option>
+			<option value="WALKING">Walking</option>
+			<option value="BICYCLING">Bicycling</option>
+			<option value="TRANSIT">Transit</option>
+		</select>
+		<div id="travel-route"></div>
 		<div class="result-routes">
 			<h3 class="title">Partida: </h3>
 			<p class="desc start"></p>

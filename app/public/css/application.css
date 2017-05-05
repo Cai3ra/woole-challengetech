@@ -879,3 +879,54 @@ body, html {
   width: 100%;
   height: 100%;
 }
+
+#travel-mode {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  right: 0;
+  width: 338px;
+  height: 30px;
+  border: 4px solid #FF9715;
+  border-bottom: none;
+  z-index: 1;
+  background-color: #021019;
+  color: #ffffff;
+  opacity: 0.9;
+}
+
+#travel-route {
+  position: absolute;
+  overflow-y: auto;
+  z-index: 1;
+  top: 30px;
+  right: 0;
+  width: 320px;
+  height: calc(100% - 48px);
+  border: 4px solid #FF9715;
+  z-index: 1;
+  padding: 5px;
+  background-color: #ffffff;
+  opacity: 0.9;
+}
+
+.adp-straight {
+  background-image: url("../img/directions-sprt.png") !important;
+  background-repeat: no-repeat !important;
+  background-position: 0 0 !important;
+  background-size: 16px 52px !important;
+}
+
+.adp-turn-right, .adp-keep-right {
+  background-image: url("../img/directions-sprt.png") !important;
+  background-repeat: no-repeat !important;
+  background-position: 0 -19px !important;
+  background-size: 16px 52px !important;
+}
+
+.adp-keep-left, .adp-turn-left {
+  background-image: url("../img/directions-sprt.png") !important;
+  background-repeat: no-repeat !important;
+  background-position: 0 -37px !important;
+  background-size: 16px 52px !important;
+}

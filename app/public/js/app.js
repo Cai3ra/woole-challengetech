@@ -83,6 +83,7 @@ MapsController = (function(superClass) {
     this.onSearchStartBox = bind(this.onSearchStartBox, this);
     this.getRoute = bind(this.getRoute, this);
     this.onSearch = bind(this.onSearch, this);
+    this.setSelectTravels = bind(this.setSelectTravels, this);
     this.setSearchBoxes = bind(this.setSearchBoxes, this);
     this.onKmlLoaded = bind(this.onKmlLoaded, this);
     this.setStopPoints = bind(this.setStopPoints, this);
@@ -98,6 +99,7 @@ MapsController = (function(superClass) {
     this.originDirection = null;
     this.searchStartBox = null;
     this.searchEndBox = null;
+    this.selectedTravelMode = "DRIVING";
     this.places = {
       start: null,
       dest: null
@@ -117,7 +119,13 @@ MapsController = (function(superClass) {
     mapElement = this.querySelector('.map');
     this.geocoder = new google.maps.Geocoder();
     this.directionsService = new google.maps.DirectionsService();
-    this.directionsDisplay = new google.maps.DirectionsRenderer();
+    this.directionsDisplay = new google.maps.DirectionsRenderer({
+      polylineOptions: {
+        strokeColor: "purple",
+        strokeOpacity: 0.6,
+        strokeWeight: 5
+      }
+    });
     mapOptions = {
       center: new google.maps.LatLng(-23.5874, -46.6576),
       zoom: 8,
@@ -131,12 +139,10 @@ MapsController = (function(superClass) {
     };
     this.map = new google.maps.Map(mapElement, mapOptions);
     this.map.getCenter();
-    this.map.setOptions({
-      styles: MapStyles.woole()
-    });
     this.placeMarkers = [];
     this.setStopPoints();
-    return this.setSearchBoxes();
+    this.setSearchBoxes();
+    return this.setSelectTravels();
   };
 
   MapsController.prototype.setStopPoints = function() {
@@ -185,6 +191,14 @@ MapsController = (function(superClass) {
     return autocompleteEnd.bindTo('bounds', this.map);
   };
 
+  MapsController.prototype.setSelectTravels = function() {
+    return document.getElementById('travel-mode').addEventListener('change', (function(_this) {
+      return function() {
+        return _this.selectedTravelMode = document.getElementById('travel-mode').value;
+      };
+    })(this));
+  };
+
   MapsController.prototype.onSearch = function() {
     if (!this.places.start || !this.places.dest) {
       return;
@@ -196,6 +210,7 @@ MapsController = (function(superClass) {
   MapsController.prototype.getRoute = function(_origLatLng, _destLatLng) {
     var _waypts, request;
     this.directionsDisplay.setMap(this.map);
+    this.directionsDisplay.setPanel(document.getElementById('travel-route'));
     _waypts = [
       {
         location: new google.maps.LatLng(this.startClosest.lat, this.startClosest.lng),
@@ -208,7 +223,7 @@ MapsController = (function(superClass) {
     request = {
       origin: _origLatLng,
       destination: _destLatLng,
-      travelMode: google.maps.TravelMode.BICYCLING,
+      travelMode: this.selectedTravelMode,
       waypoints: _waypts,
       optimizeWaypoints: true
     };
